@@ -3,11 +3,34 @@
 Classifies WikiArt paintings by style, artist, and genre using internal activations
 from a Stable Diffusion UNet as features, rather than training a vision model from scratch.
 
+![activation panel](results/eval/activation_panel.png)
+*PCA of SD U-Net activations at three layers — the model localises semantically meaningful
+regions (buildings, sky, figures) without any spatial supervision. Row 0: original painting.
+Rows 1–3: down_blocks.2 → mid_block → up_blocks.1.*
+
 The core idea: an SD model fine-tuned on WikiArt (`valhalla/sd-wikiart-v2`) has already
 learned rich representations of painting texture, brushwork, and composition. We extract
 those representations at a fixed noise timestep and train lightweight classifiers on top —
 a Conv-LSTM that reasons spatially over the feature map, an MLP linear probe, and a
 ResNet50 fine-tune as a baseline.
+
+## Results
+
+All models trained with class-weighted loss on 150 images/class. Artist top-5 accuracy
+is the primary metric there given 129 classes.
+
+| Model | Features | Style acc | Style F1 | Artist acc | Artist top-5 | Genre acc | Genre F1 |
+|---|---|---|---|---|---|---|---|
+| ResNet50 | raw pixels | 0.613 | 0.618 | 0.740 | 0.908 | 0.667 | 0.662 |
+| MLP probe | SD pooled (3840-d) | 0.648 | 0.658 | 0.709 | 0.902 | 0.718 | 0.709 |
+| ConvLSTM | SD spatial (16×16) | 0.550 | 0.563 | 0.581 | 0.805 | 0.655 | 0.637 |
+
+A few things worth noting: the MLP probe outperforms ResNet50 on genre and is competitive
+on style — just a linear layer on top of frozen SD features. The ConvLSTM underperforms
+the MLP here likely because spatial reasoning over 256 tokens needs more data than
+150/class to converge; at full dataset scale the gap should close. An earlier run without
+class weighting showed convlstm_artist at 0.603 top-1 / 0.816 top-5, confirming the
+spatial model does benefit from seeing more of the rare classes.
 
 ## Setup
 
