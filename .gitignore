@@ -1,0 +1,11 @@
+activations/
+data/
+wandb/
+results/logs/
+results_2/logs/
+results/checkpoints/
+results_2/checkpoints/
+__pycache__/
+*.pyc
+.env
+push_wts_hf.py
